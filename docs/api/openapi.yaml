@@ -1,0 +1,350 @@
+openapi: 3.0.0
+info:
+  title: YUGA API
+  version: 1.0.0
+  description: |
+    YUGA (Yielding Unified Game Automation) API documentation.
+    
+    This API provides endpoints for AI-powered game development automation.
+
+servers:
+  - url: https://api.yuga.dev/v1
+    description: Production server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - owner_id
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        owner_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        engine:
+          type: string
+          enum: [unity, bevy]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+
+    AIJob:
+      type: object
+      required:
+        - id
+        - project_id
+        - task
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        task:
+          type: string
+          enum: [codegen, artgen, worldgen]
+        model:
+          type: string
+          enum: [gpt-4, claude-3, starcoder]
+        prompt:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        result:
+          type: object
+        error:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Asset:
+      type: object
+      required:
+        - id
+        - project_id
+        - name
+        - type
+        - url
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [texture, model, animation, audio]
+        url:
+          type: string
+        metadata:
+          type: object
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+paths:
+  /projects:
+    get:
+      summary: List projects
+      description: Get a list of projects the user has access to
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+    
+    post:
+      summary: Create project
+      description: Create a new game development project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - engine
+              properties:
+                name:
+                  type: string
+                engine:
+                  type: string
+                  enum: [unity, bevy]
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /projects/{projectId}:
+    parameters:
+      - in: path
+        name: projectId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    
+    get:
+      summary: Get project
+      description: Get project details
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+    
+    patch:
+      summary: Update project
+      description: Update project details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /projects/{projectId}/ai/generate:
+    post:
+      summary: Generate content
+      description: Generate game content using AI
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - task
+                - prompt
+              properties:
+                task:
+                  type: string
+                  enum: [codegen, artgen, worldgen]
+                model:
+                  type: string
+                  enum: [gpt-4, claude-3, starcoder]
+                prompt:
+                  type: string
+                options:
+                  type: object
+      responses:
+        '202':
+          description: Generation job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIJob'
+
+  /projects/{projectId}/ai/jobs/{jobId}:
+    get:
+      summary: Get job status
+      description: Get the status of an AI generation job
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job status and result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIJob'
+
+  /projects/{projectId}/assets:
+    get:
+      summary: List assets
+      description: Get a list of project assets
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [texture, model, animation, audio]
+      responses:
+        '200':
+          description: List of assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Asset'
+    
+    post:
+      summary: Upload asset
+      description: Upload a new asset to the project
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - type
+              properties:
+                file:
+                  type: string
+                  format: binary
+                type:
+                  type: string
+                  enum: [texture, model, animation, audio]
+                name:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Asset uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'

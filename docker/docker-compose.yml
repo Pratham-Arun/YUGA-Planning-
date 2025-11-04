@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  unity-builder:
+    build:
+      context: ./unity
+      dockerfile: Dockerfile
+    volumes:
+      - ../:/project
+    environment:
+      - UNITY_LICENSE
+      - UNITY_USERNAME
+      - UNITY_PASSWORD
+      - BUILD_TARGET=StandaloneLinux64
+      - BUILD_PATH=/project/Build
+    command: build
+
+  rust-builder:
+    build:
+      context: ./rust
+      dockerfile: Dockerfile
+    volumes:
+      - ../:/project
+    environment:
+      - CARGO_HOME=/project/.cargo
+      - RUSTUP_HOME=/project/.rustup
+    command: release

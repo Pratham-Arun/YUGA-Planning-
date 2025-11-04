@@ -1,17 +1,175 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { HfInference } from '@huggingface/inference';
+import { ChromaClient } from 'chromadb';
+import { SupabaseVectorStore } from 'langchain/vectorstores/supabase';
+import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
+import fetch from 'node-fetch';
 import ProjectAnalyzer from './projectAnalyzer.js';
+
+// Model provider interface
+class ModelProvider {
+  async generateText(prompt, options = {}) { throw new Error('Not implemented'); }
+  async generateCode(prompt, options = {}) { throw new Error('Not implemented'); }
+  async generateImage(prompt, options = {}) { throw new Error('Not implemented'); }
+  async generate3D(prompt, options = {}) { throw new Error('Not implemented'); }
+  async embedText(text) { throw new Error('Not implemented'); }
+}
+
+// OpenAI Provider
+class OpenAIProvider extends ModelProvider {
+  constructor(apiKey) {
+    super();
+    this.client = new OpenAI({ apiKey });
+    this.embeddings = new OpenAIEmbeddings({ apiKey });
+  }
+
+  async generateText(prompt, options = {}) {
+    const completion = await this.client.chat.completions.create({
+      model: options.model || 'gpt-4',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: options.temperature || 0.7
+    });
+    return completion.choices[0].message.content;
+  }
+
+  async generateCode(prompt, options = {}) {
+    return this.generateText(prompt, { ...options, temperature: 0.2 });
+  }
+
+  async embedText(text) {
+    return await this.embeddings.embedQuery(text);
+  }
+}
+
+// Mistral Provider (via Ollama)
+class MistralProvider extends ModelProvider {
+  constructor(endpoint = 'http://localhost:11434') {
+    super();
+    this.endpoint = endpoint;
+  }
+
+  async generateText(prompt, options = {}) {
+    const response = await fetch(`${this.endpoint}/api/generate`, {
+      method: 'POST',
+      body: JSON.stringify({
+        model: 'mixtral',
+        prompt,
+        stream: false
+      })
+    });
+    const data = await response.json();
+    return data.response;
+  }
+
+  async generateCode(prompt, options = {}) {
+    return this.generateText(`Generate code for: ${prompt}`, options);
+  }
+}
+
+// HuggingFace Provider
+class HuggingFaceProvider extends ModelProvider {
+  constructor(apiKey) {
+    super();
+    this.client = new HfInference(apiKey);
+  }
+
+  async generateCode(prompt, options = {}) {
+    const result = await this.client.textGeneration({
+      model: options.model || 'bigcode/starcoder',
+      inputs: prompt,
+      parameters: {
+        max_new_tokens: 1024,
+        temperature: 0.2,
+        return_full_text: false
+      }
+    });
+    return result.generated_text;
+  }
+
+  async generateImage(prompt, options = {}) {
+    const result = await this.client.textToImage({
+      model: 'stabilityai/stable-diffusion-xl-base-1.0',
+      inputs: prompt,
+      parameters: options
+    });
+    return result;
+  }
+}
+
+// Replicate Provider
+class ReplicateProvider extends ModelProvider {
+  constructor(apiToken) {
+    super();
+    this.apiToken = apiToken;
+  }
+
+  async generateImage(prompt, options = {}) {
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${this.apiToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        input: {
+          prompt,
+          ...options
+        }
+      })
+    });
+    const prediction = await response.json();
+    return prediction.urls.get;
+  }
+
+  async generate3D(prompt, options = {}) {
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${this.apiToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        version: "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117",
+        input: {
+          prompt,
+          ...options
+        }
+      })
+    });
+    const prediction = await response.json();
+    return prediction.urls.get;
+  }
+}
 
 /**
  * Enhanced AI Service
  * Provides context-aware code generation, explanation, and multi-file support
+ * with support for multiple AI providers and local models
  */
 class EnhancedAI {
   constructor() {
-    this.openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
-    this.anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
-    this.google = process.env.GOOGLE_API_KEY ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY) : null;
+    // Initialize providers
+    this.providers = new Map();
+    
+    if (process.env.OPENAI_API_KEY) {
+      this.providers.set('openai', new OpenAIProvider(process.env.OPENAI_API_KEY));
+    }
+    
+    if (process.env.HUGGINGFACE_API_KEY) {
+      this.providers.set('huggingface', new HuggingFaceProvider(process.env.HUGGINGFACE_API_KEY));
+    }
+    
+    if (process.env.REPLICATE_API_KEY) {
+      this.providers.set('replicate', new ReplicateProvider(process.env.REPLICATE_API_KEY));
+    }
+
+    // Local models via Ollama
+    this.providers.set('mistral', new MistralProvider());
+
+    // Vector stores
+    this.setupVectorStores();
   }
 
   /**
@@ -122,15 +280,92 @@ Return ONLY the code, no markdown formatting, no explanations outside the code c
   /**
    * Generate code using selected AI model
    */
+  async setupVectorStores() {
+    // Setup Supabase for production
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
+      this.vectorStore = new SupabaseVectorStore(
+        new OpenAIEmbeddings(),
+        { 
+          url: process.env.SUPABASE_URL,
+          key: process.env.SUPABASE_KEY,
+          tableName: 'embeddings'
+        }
+      );
+    }
+
+    // Setup local Chroma for offline/development
+    this.localVectorStore = new ChromaClient();
+  }
+
+  // Get best provider for task
+  getProvider(task, preferredProvider = null) {
+    if (preferredProvider && this.providers.has(preferredProvider)) {
+      return this.providers.get(preferredProvider);
+    }
+
+    // Default provider selection
+    switch (task) {
+      case 'code':
+        return this.providers.get('openai') || 
+               this.providers.get('mistral') || 
+               this.providers.get('huggingface');
+      case 'image':
+        return this.providers.get('replicate') ||
+               this.providers.get('huggingface');
+      case '3d':
+        return this.providers.get('replicate');
+      default:
+        return this.providers.get('openai') ||
+               this.providers.get('mistral');
+    }
+  }
+
+  // Log model usage for analytics
+  async logModelUsage(provider, task, success, duration) {
+    if (this.vectorStore) {
+      await this.vectorStore.client.from('model_analytics').insert({
+        provider,
+        task,
+        success,
+        duration,
+        timestamp: new Date()
+      });
+    }
+  }
+
   async generate(model, prompt, language) {
-    if (model?.includes('gpt')) {
-      return await this.generateWithOpenAI(model, prompt);
-    } else if (model?.includes('claude')) {
-      return await this.generateWithClaude(model, prompt);
-    } else if (model?.includes('gemini')) {
-      return await this.generateWithGemini(model, prompt);
-    } else {
-      throw new Error('Unsupported AI model');
+    const startTime = Date.now();
+    let success = false;
+    let result = null;
+
+    try {
+      // Determine provider based on model name
+      let provider;
+      if (model?.includes('gpt')) {
+        provider = this.getProvider('code', 'openai');
+      } else if (model?.includes('starcoder')) {
+        provider = this.getProvider('code', 'huggingface');
+      } else if (model?.includes('mistral')) {
+        provider = this.getProvider('code', 'mistral');
+      } else {
+        provider = this.getProvider('code');
+      }
+
+      if (!provider) {
+        throw new Error('No suitable provider found for: ' + model);
+      }
+
+      result = await provider.generateCode(prompt, { language });
+      success = true;
+      return result;
+
+    } finally {
+      await this.logModelUsage(
+        model,
+        'code_generation',
+        success,
+        Date.now() - startTime
+      );
     }
   }
 

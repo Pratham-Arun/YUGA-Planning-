@@ -18,19 +18,55 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const DB_PATH = process.env.YUGA_DB || path.join(process.cwd(), 'yuga.db');
 
+// Make db available to routes
+app.locals.db = new Database(DB_PATH);
+
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
+
+// Auth routes
+import auth from './routes/auth.js';
+import emailVerification from './routes/email-verification.js';
+app.use('/api/auth', auth.router);
+app.use('/api/auth', emailVerification);
+
+// Auth middleware for protected routes
+const { authenticateToken } = auth;
 
 // Init DB
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
+
+// Init projects table
 db.exec(`
 CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   data TEXT NOT NULL,
-  updated_at INTEGER NOT NULL
+  owner_id TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  FOREIGN KEY(owner_id) REFERENCES users(id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id);
+`);
+
+// Init user tables
+db.exec(`
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT,
+  display_name TEXT,
+  google_id TEXT UNIQUE,
+  github_id TEXT UNIQUE,
+  picture_url TEXT,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
+CREATE INDEX IF NOT EXISTS idx_users_github_id ON users(github_id);
 `);
 
 // Health
@@ -39,40 +75,60 @@ app.get('/health', (req, res) => {
 });
 
 // List projects (summary)
-app.get('/api/projects', (req, res) => {
-  const rows = db.prepare('SELECT id, name, updated_at FROM projects ORDER BY updated_at DESC').all();
+app.get('/api/projects', authenticateToken, (req, res) => {
+  const rows = db.prepare('SELECT id, name, updated_at FROM projects WHERE owner_id = ? ORDER BY updated_at DESC').all(req.user.id);
   res.json(rows);
 });
 
 // Get one project
-app.get('/api/projects/:id', (req, res) => {
-  const row = db.prepare('SELECT id, name, data, updated_at FROM projects WHERE id = ?').get(req.params.id);
+app.get('/api/projects/:id', authenticateToken, (req, res) => {
+  const row = db.prepare('SELECT id, name, data, updated_at FROM projects WHERE id = ? AND owner_id = ?').get(req.params.id, req.user.id);
   if (!row) return res.status(404).json({ error: 'Not found' });
   row.data = JSON.parse(row.data);
   res.json(row);
 });
 
 // Upsert project
-app.post('/api/projects', (req, res) => {
+app.post('/api/projects', authenticateToken, (req, res) => {
   const body = req.body;
-  if (!body || !body.id || !body.name || !body.data) return res.status(400).json({ error: 'id, name, data required' });
+  if (!body || !body.name || !body.data) return res.status(400).json({ error: 'name and data required' });
+  
   const now = Date.now();
+  const projectId = body.id || uuid();
+  
   const stmt = db.prepare(`
-    INSERT INTO projects (id, name, data, updated_at) VALUES (@id, @name, @data, @updated_at)
-    ON CONFLICT(id) DO UPDATE SET name=@name, data=@data, updated_at=@updated_at
+    INSERT INTO projects (id, name, data, owner_id, updated_at) 
+    VALUES (@id, @name, @data, @owner_id, @updated_at)
+    ON CONFLICT(id) DO UPDATE SET 
+      name=@name, 
+      data=@data, 
+      updated_at=@updated_at 
+      WHERE owner_id=@owner_id
   `);
-  stmt.run({ id: body.id, name: body.name, data: JSON.stringify(body.data), updated_at: now });
-  res.json({ ok: true, updated_at: now });
+  
+  const result = stmt.run({ 
+    id: projectId, 
+    name: body.name, 
+    data: JSON.stringify(body.data), 
+    owner_id: req.user.id,
+    updated_at: now 
+  });
+  
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'Project not found or not owned by user' });
+  }
+  
+  res.json({ id: projectId, updated_at: now });
 });
 
 // Delete project
-app.delete('/api/projects/:id', (req, res) => {
-  const info = db.prepare('DELETE FROM projects WHERE id = ?').run(req.params.id);
+app.delete('/api/projects/:id', authenticateToken, (req, res) => {
+  const info = db.prepare('DELETE FROM projects WHERE id = ? AND owner_id = ?').run(req.params.id, req.user.id);
   res.json({ ok: true, changes: info.changes });
 });
 
-// AI Code Generation Endpoint
-app.post('/api/ai/generate-code', async (req, res) => {
+// AI Code Generation Endpoint - protected
+app.post('/api/ai/generate-code', authenticateToken, async (req, res) => {
   const { prompt, model, language } = req.body;
   
   if (!prompt) {
