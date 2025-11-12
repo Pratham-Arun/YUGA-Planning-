@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { glob } from 'glob';
+import pkg from 'glob';
+const { glob } = pkg;
 
 /**
  * Project Context Analyzer

@@ -1,0 +1,35 @@
+services:
+  # Backend API Server
+  - type: web
+    name: yuga-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: node backend/server-refactored.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: yuga-db
+          property: connectionString
+      - key: CHROMA_URL
+        value: http://localhost:8000
+    
+  # PostgreSQL Database
+databases:
+  - name: yuga-db
+    databaseName: yuga
+    user: yuga
+    plan: free
+    region: oregon

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YUGA Engine - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .demo-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .input-area {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .output-area {
+            background: #1f2937;
+            color: #10b981;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            min-height: 200px;
+            overflow-y: auto;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 15px;
+            background: white;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+        
+        .online { background: #10b981; color: white; }
+        .offline { background: #ef4444; color: white; }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .feature-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .feature-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .example-btn {
+            background: #e5e7eb;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .example-btn:hover {
+            background: #d1d5db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 YUGA Engine</h1>
+            <p style="font-size: 1.2em; color: #666; margin-bottom: 15px;">
+                Interactive AI-Powered Game Development Demo
+            </p>
+            <div class="status-badge online" id="status">🟢 API ONLINE</div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🤖 AI Code Generator</h2>
+            <div class="demo-grid">
+                <div class="input-area">
+                    <h3 style="margin-bottom: 15px;">Input</h3>
+                    
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Language:</label>
+                    <select id="language">
+                        <option value="csharp">C# (Unity)</option>
+                        <option value="cpp">C++</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                    </select>
+                    
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Prompt:</label>
+                    <div class="example-buttons">
+                        <button class="example-btn" onclick="setExample('player')">Player Controller</button>
+                        <button class="example-btn" onclick="setExample('enemy')">Enemy AI</button>
+                        <button class="example-btn" onclick="setExample('inventory')">Inventory System</button>
+                    </div>
+                    <textarea id="prompt" placeholder="Describe what code you want to generate...">Create a player controller with WASD movement and jump functionality</textarea>
+                    
+                    <button onclick="generateCode()" id="generateBtn">
+                        🚀 Generate Code
+                    </button>
+                </div>
+                
+                <div class="output-area" id="output">
+                    <div style="color: #9ca3af;">
+                        // Generated code will appear here...<br><br>
+                        Click "Generate Code" to see AI in action!
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>📊 System Statistics</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>25+</h3>
+                    <p>API Endpoints</p>
+                </div>
+                <div class="feature-card">
+                    <h3>15+</h3>
+                    <p>AI Models</p>
+                </div>
+                <div class="feature-card">
+                    <h3>83</h3>
+                    <p>Total Files</p>
+                </div>
+                <div class="feature-card">
+                    <h3>17K+</h3>
+                    <p>Lines of Code</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🎯 Today's Achievements</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="background: #f9fafb; padding: 20px; border-radius: 10px;">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">✅ Phase 3 Complete</h3>
+                    <ul style="list-style: none; line-height: 2;">
+                        <li>✓ Physics System (Bullet3)</li>
+                        <li>✓ Audio System (OpenAL)</li>
+                        <li>✓ Enhanced ECS (10+ components)</li>
+                        <li>✓ AI Model Router (15+ models)</li>
+                    </ul>
+                </div>
+                <div style="background: #f9fafb; padding: 20px; border-radius: 10px;">
+                    <h3 style="color: #667eea; margin-bottom: 10px;">🚀 Systems Running</h3>
+                    <ul style="list-style: none; line-height: 2;">
+                        <li>✓ Backend API - ONLINE</li>
+                        <li>✓ Web Dashboard - LIVE</li>
+                        <li>✓ Unity Plugin - READY</li>
+                        <li>⏸ C++ Engine - Needs CMake</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Check API status
+        async function checkStatus() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                document.getElementById('status').className = 'status-badge online';
+                document.getElementById('status').textContent = '🟢 API ONLINE';
+            } catch (error) {
+                document.getElementById('status').className = 'status-badge offline';
+                document.getElementById('status').textContent = '🔴 API OFFLINE';
+            }
+        }
+        
+        // Set example prompts
+        function setExample(type) {
+            const examples = {
+                player: 'Create a player controller with WASD movement, jump functionality, and ground detection',
+                enemy: 'Create an enemy AI that patrols between waypoints and chases the player when in range',
+                inventory: 'Create an inventory system with add, remove, and use item functionality'
+            };
+            document.getElementById('prompt').value = examples[type];
+        }
+        
+        // Generate code
+        async function generateCode() {
+            const prompt = document.getElementById('prompt').value;
+            const language = document.getElementById('language').value;
+            const output = document.getElementById('output');
+            const btn = document.getElementById('generateBtn');
+            
+            if (!prompt.trim()) {
+                output.innerHTML = '<span style="color: #ef4444;">Please enter a prompt!</span>';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Generating...';
+            output.innerHTML = '<span style="color: #fbbf24;">⏳ Generating code with AI...</span>';
+            
+            try {
+                const response = await fetch('/api/ai/generate-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, language, model: 'gemini-pro' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    output.innerHTML = `<span style="color: #10b981;">✅ Code generated successfully!</span><br><br>${escapeHtml(data.code || data.message || JSON.stringify(data, null, 2))}`;
+                } else {
+                    const error = await response.json();
+                    output.innerHTML = `<span style="color: #fbbf24;">⚠️ Demo Mode</span><br><br>// AI API keys not configured<br>// This is a demonstration of the system<br><br>class PlayerController {<br>    void Update() {<br>        // WASD movement<br>        float h = Input.GetAxis("Horizontal");<br>        float v = Input.GetAxis("Vertical");<br>        transform.Translate(new Vector3(h, 0, v) * speed * Time.deltaTime);<br>        <br>        // Jump<br>        if (Input.GetKeyDown(KeyCode.Space) && isGrounded) {<br>            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);<br>        }<br>    }<br>}`;
+                }
+            } catch (error) {
+                output.innerHTML = `<span style="color: #fbbf24;">⚠️ Demo Mode</span><br><br>// Showing example output<br>// Configure AI API keys for live generation<br><br>class PlayerController {<br>    void Update() {<br>        // WASD movement<br>        float h = Input.GetAxis("Horizontal");<br>        float v = Input.GetAxis("Vertical");<br>        transform.Translate(new Vector3(h, 0, v) * speed * Time.deltaTime);<br>        <br>        // Jump<br>        if (Input.GetKeyDown(KeyCode.Space) && isGrounded) {<br>            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);<br>        }<br>    }<br>}`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Generate Code';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Check status on load
+        checkStatus();
+        setInterval(checkStatus, 30000); // Check every 30 seconds
+    </script>
+</body>
+</html>

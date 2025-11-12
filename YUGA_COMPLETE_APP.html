@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YUGA - Yielding Unified Game Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --background: hsl(222.2, 47%, 11%);
+            --foreground: hsl(210, 40%, 98%);
+            --card: hsl(217.2, 32.6%, 17.5%);
+            --primary: hsl(243, 75%, 59%);
+            --accent: hsl(24, 95%, 53%);
+            --success: hsl(158, 64%, 52%);
+            --muted-foreground: hsl(215, 20.2%, 65.1%);
+            --border: hsl(217.2, 32.6%, 25%);
+            --toolbar: hsl(222.2, 47%, 8%);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--foreground);
+            min-height: 100vh;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--toolbar);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-center;
+            font-size: 24px;
+        }
+        
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .nav-link {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: var(--card);
+            color: var(--foreground);
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+        
+        .welcome-section h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-section p {
+            color: var(--muted-foreground);
+            margin-bottom: 2rem;
+        }
+        
+        /* Tools Grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .tool-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .tool-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .tool-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-center;
+            margin-bottom: 1rem;
+            font-size: 24px;
+        }
+        
+        .tool-icon.primary { background: hsla(243, 75%, 59%, 0.1); color: var(--primary); }
+        .tool-icon.accent { background: hsla(24, 95%, 53%, 0.1); color: var(--accent); }
+        .tool-icon.success { background: hsla(158, 64%, 52%, 0.1); color: var(--success); }
+        
+        .tool-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tool-card p {
+            color: var(--muted-foreground);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        
+        .tool-link {
+            color: var(--primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        /* Engine Layout */
+        .engine-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            grid-template-rows: 50px 1fr 200px;
+            height: calc(100vh - 73px);
+            gap: 1px;
+            background: var(--border);
+        }
+        
+        .panel {
+            background: var(--card);
+            overflow: auto;
+        }
+        
+        .panel-header {
+            background: var(--toolbar);
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toolbar {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0 1rem;
+        }
+        
+        .tool-btn {
+            background: var(--toolbar);
+            border: 1px solid var(--border);
+            color: var(--foreground);
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .tool-btn:hover {
+            background: var(--card);
+        }
+        
+        .tool-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .hierarchy {
+            grid-row: 2 / 4;
+        }
+        
+        .viewport {
+            grid-row: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--background);
+        }
+        
+        .inspector {
+            grid-row: 2 / 4;
+        }
+        
+        .console {
+            grid-column: 2;
+        }
+        
+        .tree-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .tree-item:hover {
+            background: var(--toolbar);
+        }
+        
+        .tree-item.selected {
+            background: var(--primary);
+        }
+        
+        .property {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .property-label {
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+            margin-bottom: 0.25rem;
+        }
+        
+        .property-input {
+            width: 100%;
+            background: var(--toolbar);
+            border: 1px solid var(--border);
+            color: var(--foreground);
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        
+        .console-log {
+            padding: 0.5rem 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .console-log.info { color: var(--success); }
+        .console-log.warning { color: var(--accent); }
+        
+        /* Editor Layout */
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            height: calc(100vh - 73px);
+            gap: 1px;
+            background: var(--border);
+        }
+        
+        .file-tree {
+            background: var(--card);
+        }
+        
+        .code-editor {
+            background: var(--background);
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow: auto;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .engine-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section" onclick="navigateTo('dashboard')">
+                <div class="logo-icon">🎮</div>
+                <div class="logo-text">
+                    <h1>YUGA</h1>
+                    <p>Yielding Unified Game Automation</p>
+                </div>
+            </div>
+            <div class="nav-links">
+                <div class="nav-link" onclick="navigateTo('dashboard')">Dashboard</div>
+                <div class="nav-link" onclick="navigateTo('engine')">Engine</div>
+                <div class="nav-link" onclick="navigateTo('script-editor')">Scripts</div>
+                <div class="nav-link" onclick="navigateTo('animation')">Animation</div>
+                <div class="nav-link" onclick="navigateTo('ai-assistant')">AI</div>
+            </div>
+            <button class="btn btn-primary" onclick="alert('New Project')">
+                📁 New Project
+            </button>
+        </div>
+    </header>
+
+    <!-- Dashboard Page -->
+    <div id="dashboard" class="page active">
+        <main class="main-content">
+            <div class="welcome-section">
+                <h2>Welcome to YUGA</h2>
+                <p>Your complete AI-powered game development suite. Choose a tool to get started.</p>
+            </div>
+
+            <div class="tools-grid">
+                <div class="tool-card" onclick="navigateTo('engine')">
+                    <div class="tool-icon primary">🎮</div>
+                    <h3>Game Engine</h3>
+                    <p>Unity-style 3D editor with scene hierarchy and inspector</p>
+                    <div class="tool-link">Open Tool ▶</div>
+                </div>
+
+                <div class="tool-card" onclick="navigateTo('script-editor')">
+                    <div class="tool-icon accent">💻</div>
+                    <h3>Script Editor</h3>
+                    <p>Professional code editor with syntax highlighting</p>
+                    <div class="tool-link">Open Tool ▶</div>
+                </div>
+
+                <div class="tool-card" onclick="navigateTo('animation')">
+                    <div class="tool-icon success">🎬</div>
+                    <h3>Animation Editor</h3>
+                    <p>Timeline-based animation system with keyframes</p>
+                    <div class="tool-link">Open Tool ▶</div>
+                </div>
+
+                <div class="tool-card" onclick="navigateTo('visual-scripting')">
+                    <div class="tool-icon primary">🔗</div>
+                    <h3>Visual Scripting</h3>
+                    <p>Node-based programming without code</p>
+                    <div class="tool-link">Open Tool ▶</div>
+                </div>
+
+                <div class="tool-card" onclick="navigateTo('ai-assistant')">
+                    <div class="tool-icon accent">✨</div>
+                    <h3>AI Code Assistant</h3>
+                    <p>Natural language to code generation</p>
+                    <div class="tool-link">Open Tool ▶</div>
+                </div>
+
+                <div class="tool-card" onclick="navigateTo('asset-generator')">
+                    <div class="tool-icon success">📦</div>
+                    <h3>Asset Generator</h3>
+                    <p>AI-powered 3D models and textures</p>
+                    <div class="tool-link">Open Tool ▶</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Game Engine Page -->
+    <div id="engine" class="page">
+        <div class="engine-layout">
+            <div class="toolbar">
+                <button class="tool-btn active">▶️ Play</button>
+                <button class="tool-btn">⏸️ Pause</button>
+                <button class="tool-btn">⏹️ Stop</button>
+                <div style="flex: 1"></div>
+                <button class="tool-btn">2D</button>
+                <button class="tool-btn">3D</button>
+            </div>
+
+            <div class="panel hierarchy">
+                <div class="panel-header">🌳 Hierarchy</div>
+                <div class="tree-item selected">📁 Main Scene</div>
+                <div class="tree-item" style="padding-left: 2rem">📷 Main Camera</div>
+                <div class="tree-item" style="padding-left: 2rem">💡 Light</div>
+                <div class="tree-item" style="padding-left: 2rem">🎯 Player</div>
+                <div class="tree-item" style="padding-left: 2rem">🌍 Terrain</div>
+            </div>
+
+            <div class="panel viewport">
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 1rem;">🎮</div>
+                    <div>3D Viewport</div>
+                    <div style="font-size: 0.875rem; color: var(--muted-foreground); margin-top: 0.5rem;">
+                        Scene Rendering Area
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel inspector">
+                <div class="panel-header">🔍 Inspector</div>
+                <div class="property">
+                    <div class="property-label">Position X</div>
+                    <input type="number" class="property-input" value="0.0">
+                </div>
+                <div class="property">
+                    <div class="property-label">Position Y</div>
+                    <input type="number" class="property-input" value="0.0">
+                </div>
+                <div class="property">
+                    <div class="property-label">Position Z</div>
+                    <input type="number" class="property-input" value="0.0">
+                </div>
+            </div>
+
+            <div class="panel console">
+                <div class="panel-header">📋 Console</div>
+                <div class="console-log info">[INFO] Engine initialized</div>
+                <div class="console-log info">[INFO] Scene loaded</div>
+                <div class="console-log warning">[WARN] Shader compilation 120ms</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Editor Page -->
+    <div id="script-editor" class="page">
+        <div class="editor-layout">
+            <div class="panel file-tree">
+                <div class="panel-header">📁 Files</div>
+                <div class="tree-item">📁 Scripts</div>
+                <div class="tree-item selected" style="padding-left: 2rem">📄 Player.cs</div>
+                <div class="tree-item" style="padding-left: 2rem">📄 Enemy.cs</div>
+                <div class="tree-item">📁 Assets</div>
+            </div>
+
+            <div class="panel code-editor">
+                <div style="color: var(--muted-foreground);">// Player.cs</div>
+                <div style="margin-top: 1rem;">
+                    <span style="color: var(--accent);">using</span> UnityEngine;<br><br>
+                    <span style="color: var(--accent);">public class</span> <span style="color: var(--success);">Player</span> : MonoBehaviour<br>
+                    {<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--accent);">void</span> <span style="color: var(--primary);">Update</span>()<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;{<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--muted-foreground);">// Player movement code</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animation Editor Page -->
+    <div id="animation" class="page">
+        <div class="main-content">
+            <h2>🎬 Animation Editor</h2>
+            <p style="color: var(--muted-foreground); margin: 1rem 0;">Timeline-based animation system</p>
+            <div style="background: var(--card); padding: 2rem; border-radius: 0.5rem; text-align: center;">
+                <div style="font-size: 48px; margin-bottom: 1rem;">🎬</div>
+                <div>Animation Timeline</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Scripting Page -->
+    <div id="visual-scripting" class="page">
+        <div class="main-content">
+            <h2>🔗 Visual Scripting</h2>
+            <p style="color: var(--muted-foreground); margin: 1rem 0;">Node-based programming</p>
+            <div style="background: var(--card); padding: 2rem; border-radius: 0.5rem; text-align: center;">
+                <div style="font-size: 48px; margin-bottom: 1rem;">🔗</div>
+                <div>Node Editor Canvas</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Page -->
+    <div id="ai-assistant" class="page">
+        <div class="main-content">
+            <h2>✨ AI Code Assistant</h2>
+            <p style="color: var(--muted-foreground); margin: 1rem 0;">Natural language to code generation</p>
+            <div style="background: var(--card); padding: 2rem; border-radius: 0.5rem;">
+                <input type="text" placeholder="Describe what you want to create..." 
+                       style="width: 100%; padding: 1rem; background: var(--toolbar); border: 1px solid var(--border); color: var(--foreground); border-radius: 0.5rem; font-size: 1rem;">
+                <button class="btn btn-primary" style="margin-top: 1rem;">Generate Code</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Generator Page -->
+    <div id="asset-generator" class="page">
+        <div class="main-content">
+            <h2>📦 Asset Generator</h2>
+            <p style="color: var(--muted-foreground); margin: 1rem 0;">AI-powered 3D models and textures</p>
+            <div style="background: var(--card); padding: 2rem; border-radius: 0.5rem;">
+                <input type="text" placeholder="Describe the asset you want to generate..." 
+                       style="width: 100%; padding: 1rem; background: var(--toolbar); border: 1px solid var(--border); color: var(--foreground); border-radius: 0.5rem; font-size: 1rem;">
+                <button class="btn btn-primary" style="margin-top: 1rem;">Generate Asset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple routing system
+        function navigateTo(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId).classList.add('active');
+            
+            // Update nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Update URL hash
+            window.location.hash = pageId;
+        }
+        
+        // Handle browser back/forward
+        window.addEventListener('hashchange', () => {
+            const page = window.location.hash.slice(1) || 'dashboard';
+            navigateTo(page);
+        });
+        
+        // Load initial page from URL
+        window.addEventListener('load', () => {
+            const page = window.location.hash.slice(1) || 'dashboard';
+            navigateTo(page);
+        });
+    </script>
+</body>
+</html>

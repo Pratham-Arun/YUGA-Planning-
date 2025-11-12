@@ -20,6 +20,7 @@ const DB_PATH = process.env.YUGA_DB || path.join(process.cwd(), 'yuga.db');
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
+app.use(express.static('public'));
 
 // Init DB
 const db = new Database(DB_PATH);
@@ -181,13 +182,16 @@ app.post('/api/ai/generate-code', async (req, res) => {
       }
       
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-      const geminiModel = genAI.getGenerativeModel({ model: model || 'gemini-1.5-pro' });
+      // Use gemini-pro which is the stable model name
+      const modelName = 'gemini-pro';
+      const geminiModel = genAI.getGenerativeModel({ model: modelName });
       
       const result = await geminiModel.generateContent(
         `You are a game development expert. Generate clean, well-commented ${languageContext} code. Only return the code, no explanations or markdown formatting.\n\n${prompt}`
       );
       
-      code = result.response.text();
+      const response = await result.response;
+      code = response.text();
       
     } else {
       return res.status(400).json({ error: 'Unsupported AI model' });
@@ -357,6 +361,186 @@ app.get('/api/unity/status', (req, res) => {
     connected: false,
     message: 'Unity plugin not detected' 
   });
+});
+
+// Debug/Fix Code Endpoint
+app.post('/api/ai/debug-code', async (req, res) => {
+  const { error, stackTrace, language } = req.body;
+  
+  if (!error) {
+    return res.status(400).json({ error: 'Error message is required' });
+  }
+
+  try {
+    const debugPrompt = `You are a Unity C# debugging expert. Analyze this error and provide a fix:
+
+Error: ${error}
+Stack Trace: ${stackTrace || 'Not provided'}
+
+Provide:
+1. What caused the error
+2. How to fix it
+3. Code example if applicable
+
+Be concise and actionable.`;
+
+    let suggestion = '';
+    
+    // Try OpenAI first
+    if (process.env.OPENAI_API_KEY) {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'You are a Unity debugging expert.' },
+          { role: 'user', content: debugPrompt }
+        ],
+        temperature: 0.3,
+      });
+      suggestion = completion.choices[0].message.content;
+    } else if (process.env.ANTHROPIC_API_KEY) {
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const message = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: debugPrompt }],
+      });
+      suggestion = message.content[0].text;
+    } else {
+      suggestion = 'AI debugging requires OpenAI or Anthropic API key. Please configure in .env file.';
+    }
+
+    res.json({ suggestion });
+
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Unity Error Debug Endpoint (Enhanced version for Unity plugin)
+app.post('/api/ai/debug', async (req, res) => {
+  const { error, stackTrace, codeContext, language, model } = req.body;
+  
+  if (!error) {
+    return res.status(400).json({ error: 'Error message is required' });
+  }
+
+  try {
+    const debugPrompt = `You are a Unity ${language || 'C#'} debugging expert. Analyze this error and provide a complete fix.
+
+Error: ${error}
+
+Stack Trace:
+${stackTrace || 'Not provided'}
+
+Code Context:
+${codeContext || 'Not provided'}
+
+Provide your response in this format:
+1. Brief explanation of what caused the error (2-3 sentences)
+2. Complete corrected code that fixes the issue
+3. Confidence level (0.0 to 1.0)
+
+Be precise and actionable. Return ONLY the corrected code in section 2, no markdown formatting.`;
+
+    let explanation = '';
+    let suggestedFix = '';
+    let confidence = 0.8;
+    
+    const selectedModel = model || 'gpt-4';
+    
+    // Try OpenAI first
+    if (selectedModel.includes('gpt') && process.env.OPENAI_API_KEY) {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const completion = await openai.chat.completions.create({
+        model: selectedModel.includes('gpt-4') ? 'gpt-4' : 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a Unity debugging expert. Provide clear explanations and working code fixes.' },
+          { role: 'user', content: debugPrompt }
+        ],
+        temperature: 0.3,
+      });
+      
+      const response = completion.choices[0].message.content;
+      
+      // Parse response
+      const parts = response.split(/\d\./);
+      if (parts.length >= 3) {
+        explanation = parts[1].trim();
+        suggestedFix = parts[2].trim();
+        
+        // Extract confidence if mentioned
+        const confMatch = response.match(/confidence[:\s]+(\d+\.?\d*)/i);
+        if (confMatch) {
+          confidence = parseFloat(confMatch[1]);
+          if (confidence > 1) confidence = confidence / 100; // Convert percentage
+        }
+      } else {
+        explanation = response;
+        suggestedFix = response;
+      }
+      
+    } else if (selectedModel.includes('claude') && process.env.ANTHROPIC_API_KEY) {
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const message = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: debugPrompt }],
+      });
+      
+      const response = message.content[0].text;
+      
+      // Parse response
+      const parts = response.split(/\d\./);
+      if (parts.length >= 3) {
+        explanation = parts[1].trim();
+        suggestedFix = parts[2].trim();
+      } else {
+        explanation = response;
+        suggestedFix = response;
+      }
+      
+    } else if (selectedModel.includes('gemini') && process.env.GOOGLE_API_KEY) {
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+      const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+      
+      const result = await geminiModel.generateContent(debugPrompt);
+      const response = result.response.text();
+      
+      // Parse response
+      const parts = response.split(/\d\./);
+      if (parts.length >= 3) {
+        explanation = parts[1].trim();
+        suggestedFix = parts[2].trim();
+      } else {
+        explanation = response;
+        suggestedFix = response;
+      }
+      
+    } else {
+      explanation = 'AI debugging requires API key configuration. Please add OpenAI, Anthropic, or Google API key to .env file.';
+      suggestedFix = '// Unable to generate fix - API key not configured';
+      confidence = 0.0;
+    }
+    
+    // Clean up code blocks if present
+    suggestedFix = suggestedFix.replace(/```[a-z]*\n?/g, '').trim();
+
+    res.json({ 
+      explanation,
+      suggestedFix,
+      fixType: 'code_correction',
+      confidence
+    });
+
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ 
+      error: 'Failed to debug code',
+      details: error.message 
+    });
+  }
 });
 
 // ========================================

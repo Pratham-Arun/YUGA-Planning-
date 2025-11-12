@@ -1,0 +1,45 @@
+╔════════════════════════════════════════════════════════════╗
+║         YUGA - Enable AI in 2 Minutes (FREE)              ║
+╚════════════════════════════════════════════════════════════╝
+
+I've opened Google AI Studio in your browser!
+
+STEP 1: Get Your FREE API Key
+   → The browser window should be open
+   → Or go to: https://makersuite.google.com/app/apikey
+   → Click "Create API Key"
+   → Copy the key (starts with "AI...")
+
+STEP 2: Run This Command
+   → Open PowerShell in this folder
+   → Run: .\setup-google-api.ps1
+   → Paste your API key when asked
+
+STEP 3: Done!
+   → Server starts automatically
+   → AI is now enabled
+   → Test at: http://localhost:4000/demo.html
+
+═══════════════════════════════════════════════════════════
+
+ALTERNATIVE (Manual):
+1. Edit: backend\.env
+2. Replace: YOUR_GOOGLE_API_KEY_HERE
+3. With your key: AIzaSyC...
+4. Run: cd backend && node server.js
+
+═══════════════════════════════════════════════════════════
+
+WHAT YOU GET (FREE):
+✓ 60 requests per minute
+✓ 1,500 requests per day
+✓ No credit card needed
+✓ No expiration
+
+═══════════════════════════════════════════════════════════
+
+NEED HELP?
+→ See: SETUP_COMPLETE_GUIDE.md
+→ See: GET_FREE_API_KEY.md
+
+═══════════════════════════════════════════════════════════

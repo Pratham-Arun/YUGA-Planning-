@@ -1,0 +1,33 @@
+{
+  "name": "com.yuga.editor-plugin",
+  "version": "1.0.0",
+  "displayName": "YUGA AI Assistant",
+  "description": "AI-powered code generation, asset creation, and debugging assistant for Unity Editor. Integrates with YUGA Engine backend to provide natural language game development tools.",
+  "unity": "2021.3",
+  "unityRelease": "0f1",
+  "documentationUrl": "https://github.com/Pratham-Arun/YUGA-Yielding-Unified-Game-Automation#readme",
+  "changelogUrl": "https://github.com/Pratham-Arun/YUGA-Yielding-Unified-Game-Automation/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/Pratham-Arun/YUGA-Yielding-Unified-Game-Automation/blob/main/LICENSE",
+  "dependencies": {},
+  "keywords": [
+    "ai",
+    "code-generation",
+    "assistant",
+    "debugging",
+    "automation",
+    "game-development",
+    "editor-tool",
+    "unity",
+    "gpt",
+    "claude",
+    "gemini"
+  ],
+  "author": {
+    "name": "YUGA Team",
+    "url": "https://github.com/Pratham-Arun/YUGA-Yielding-Unified-Game-Automation"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pratham-Arun/YUGA-Yielding-Unified-Game-Automation.git"
+  }
+}

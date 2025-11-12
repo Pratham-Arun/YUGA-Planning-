@@ -1,0 +1,74 @@
+name: Unity Plugin CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'unity-plugin/**'
+      - '.github/workflows/unity-plugin.yml'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Validate Package JSON
+        run: |
+          if [ ! -f "unity-plugin/package.json" ]; then
+            echo "❌ package.json not found"
+            exit 1
+          fi
+          
+          # Validate JSON syntax
+          cat unity-plugin/package.json | jq empty
+          
+          echo "✅ package.json is valid"
+          
+      - name: Check C# Files
+        run: |
+          # Count C# files
+          CS_COUNT=$(find unity-plugin -name "*.cs" | wc -l)
+          echo "Found $CS_COUNT C# files"
+          
+          if [ $CS_COUNT -eq 0 ]; then
+            echo "❌ No C# files found"
+            exit 1
+          fi
+          
+          echo "✅ C# files found"
+          
+      - name: Validate File Structure
+        run: |
+          # Check required directories
+          if [ ! -d "unity-plugin/YUGAPlugin" ]; then
+            echo "❌ YUGAPlugin directory not found"
+            exit 1
+          fi
+          
+          if [ ! -d "unity-plugin/YUGAPlugin/Editor" ]; then
+            echo "❌ Editor directory not found"
+            exit 1
+          fi
+          
+          echo "✅ Directory structure is valid"
+          
+      - name: Create Unity Package
+        run: |
+          # Create a release package (simplified)
+          cd unity-plugin
+          zip -r ../YUGAPlugin-${{ github.sha }}.zip YUGAPlugin/
+          cd ..
+          
+          echo "✅ Package created"
+          
+      - name: Upload Package
+        uses: actions/upload-artifact@v3
+        with:
+          name: unity-plugin-package
+          path: YUGAPlugin-${{ github.sha }}.zip
+          retention-days: 7

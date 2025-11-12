@@ -1,0 +1,19 @@
+{
+  "name": "com.yuga.engine",
+  "version": "1.0.0",
+  "displayName": "YUGA Engine - AI Game Development",
+  "description": "AI-powered code generation, asset creation, and world building for Unity",
+  "unity": "2021.3",
+  "keywords": [
+    "ai",
+    "code-generation",
+    "game-development",
+    "automation",
+    "asset-generation"
+  ],
+  "author": {
+    "name": "YUGA Engine Team",
+    "url": "https://github.com/yourusername/yuga-engine"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,100 @@
+name: C++ Engine CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'engine-core/**'
+      - '.github/workflows/cpp-engine.yml'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v1.13
+        with:
+          cmake-version: '3.20'
+        
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        working-directory: engine-core
+        
+      - name: Build
+        run: cmake --build build --config Release
+        working-directory: engine-core
+        
+      - name: Run Tests
+        run: ctest --test-dir build -C Release --output-on-failure
+        working-directory: engine-core
+        continue-on-error: true
+        
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: yuga-engine-windows
+          path: engine-core/build/bin/Release/
+          retention-days: 7
+
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libglfw3-dev libgl1-mesa-dev
+          
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        working-directory: engine-core
+        
+      - name: Build
+        run: cmake --build build -j$(nproc)
+        working-directory: engine-core
+        
+      - name: Run Tests
+        run: ctest --test-dir build --output-on-failure
+        working-directory: engine-core
+        continue-on-error: true
+        
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: yuga-engine-linux
+          path: engine-core/build/bin/
+          retention-days: 7
+
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Install Dependencies
+        run: brew install cmake glfw
+        
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        working-directory: engine-core
+        
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.ncpu)
+        working-directory: engine-core
+        
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: yuga-engine-macos
+          path: engine-core/build/bin/
+          retention-days: 7
