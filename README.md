@@ -500,12 +500,5 @@ Built with:
 
 **Start building amazing games today!** 🚀
 
----
-
-<div align="center">
-
-**Made with ❤️ by the YUGA Team**
-
-[⭐ Star us on GitHub](https://github.com/yourusername/yuga-engine) | [📖 Read the Docs](START_HERE_ENGINE.md) | [💬 Join Discord](https://discord.gg/yuga)
 
 </div>
