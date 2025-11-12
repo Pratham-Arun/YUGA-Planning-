@@ -1,12 +1,17 @@
+<div align="center">
+
+![YUGA Logo](engine-core/examples/yuga-ai-gamecraft-main/public/logo.png)
+
 # 🎮 YUGA Engine
 
 **The World's First AI-Powered Game Development Platform**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/yuga-engine)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Pratham-Arun/YUGA-Planning-)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![C++](https://img.shields.io/badge/C++-20-orange.svg)](https://isocpp.org/)
-[![Status](https://img.shields.io/badge/status-100%25%20Complete-brightgreen.svg)](README.md)
-[![Systems](https://img.shields.io/badge/systems-15%2F15-success.svg)](README.md)
+[![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)](README.md)
+
+</div>
 
 > **Turn imagination into playable content instantly** - Build games 30x faster with AI-powered coding and creative design
 
@@ -154,25 +159,25 @@ Savings:                 97% reduction
 
 ---
 
-## 📦 Core Engine Systems (15/15 Complete)
+## 🔧 Working on Core Engine Systems
 
-| System | Status | Features |
-|--------|--------|----------|
-| **Math Library** | ✅ 100% | Vector2/3/4, Matrix4, Quaternion, Transform |
-| **Rendering** | ✅ 100% | OpenGL, PBR, Lighting, Particles, Shadows |
-| **Physics** | ✅ 100% | Bullet3, Rigid Bodies, Collisions, Raycasting |
-| **Audio** | ✅ 100% | OpenAL, 3D Spatial Audio, Music, SFX |
-| **Input** | ✅ 100% | Keyboard, Mouse, Gamepad Support |
-| **Assets** | ✅ 100% | FBX/OBJ/GLTF, Textures, Materials, Caching |
-| **Scene** | ✅ 100% | Scene Graph, Hierarchy, Serialization |
-| **ECS** | ✅ 100% | Entities, Components, Registry |
-| **Scripting** | ✅ 100% | Lua 5.4, Hot Reload, Bindings |
-| **Editor** | ✅ 100% | ImGui, Hierarchy, Inspector, Viewport |
-| **Animation** | ✅ 100% | Skeletal, State Machine, Blend Trees ✨ |
-| **Terrain** | ✅ 100% | Heightmap, LOD, Procedural Generation ✨ |
-| **UI** | ✅ 100% | Canvas, Components, Events ✨ |
-| **Networking** | ✅ 100% | Client-Server, RPC, State Sync ✨ |
-| **Build** | ✅ 100% | 6 Platforms, Asset Bundling ✨ |
+YUGA Engine is actively developing its core C++ engine systems to provide professional-grade game development capabilities:
+
+- **Math Library** - Vector2/3/4, Matrix4, Quaternion, Transform
+- **Rendering** - OpenGL, PBR, Lighting, Particles, Shadows
+- **Physics** - Bullet3, Rigid Bodies, Collisions, Raycasting
+- **Audio** - OpenAL, 3D Spatial Audio, Music, SFX
+- **Input** - Keyboard, Mouse, Gamepad Support
+- **Assets** - FBX/OBJ/GLTF, Textures, Materials, Caching
+- **Scene** - Scene Graph, Hierarchy, Serialization
+- **ECS** - Entities, Components, Registry
+- **Scripting** - Lua 5.4, Hot Reload, Bindings
+- **Editor** - ImGui, Hierarchy, Inspector, Viewport
+- **Animation** - Skeletal, State Machine, Blend Trees
+- **Terrain** - Heightmap, LOD, Procedural Generation
+- **UI** - Canvas, Components, Events
+- **Networking** - Client-Server, RPC, State Sync
+- **Build** - Multi-Platform, Asset Bundling
 
 ---
 
