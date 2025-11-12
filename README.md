@@ -3,6 +3,7 @@
 <img src="engine-core/examples/yuga-ai-gamecraft-main/public/logo.png" alt="YUGA Logo" width="150"/>
 
 # 🎮 YUGA Engine
+Yielding Unified Game Automation
 
 **The World's First AI-Powered Game Development Platform**
 
