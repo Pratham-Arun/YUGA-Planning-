@@ -19,7 +19,7 @@
 
 ## 🚀 What is YUGA?
 
-YUGA is the **first AI-powered game development platform** that accelerates both coding and creative design. We combine real-time AI-assisted coding (like Cursor AI for game engines) with AI-generated assets, enabling indie teams, studios, and solo developers to rapidly prototype and build games.
+YUGA is the **first AI-powered game development platform** that accelerates both coding and creative design. We combine real-time AI-assisted coding with AI-generated assets, enabling indie teams, studios, and solo developers to rapidly prototype and build games.
 
 ### 💡 The Vision
 
