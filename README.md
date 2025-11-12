@@ -1,6 +1,6 @@
 <div align="center">
 
-![YUGA Logo](engine-core/examples/yuga-ai-gamecraft-main/public/logo.png)
+<img src="engine-core/examples/yuga-ai-gamecraft-main/public/logo.png" alt="YUGA Logo" width="150"/>
 
 # 🎮 YUGA Engine
 
